@@ -21,12 +21,12 @@ vec4 effect( vec4 vColor, Image texture, vec2 vTexCoord0, vec2 screen_coords ) {
     vec2 tc = vec2(coord, 0.0);
 
     //the center tex coord, which gives us hard shadows
-    number center = sample(tc, r);        
+    number center = sample(tc, r);
 
     /* Remove this and add resolution variable if you want blured shadows
     //we multiply the blur amount by our distance from center
     //this leads to more blurriness as the shadow "fades away"
-    number blur = (1./resolution.x) * 0.000000001;//smoothstep(0., 1., r); 
+    number blur = (1./resolution.x) * smoothstep(0., 1., r); 
 
     //now we use a simple gaussian blur
     number sum = 0.0;

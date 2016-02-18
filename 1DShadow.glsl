@@ -9,6 +9,8 @@ const number THRESHOLD = 0.75;
 
 vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
 	float distance = 1.0;
+	float distanceDS = 1.0;
+	bool collided = false;
 
 	for (float y=0.0; y<resolution.y; y+=1.0) {
 		//rectangular to polar filter
@@ -28,11 +30,14 @@ vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords 
 		//if we've hit an opaque fragment (occluder), then get new distance
 		//if the new distance is below the current, then we'll use that for our ray
 		float caster = data.a;
-		if (caster > THRESHOLD) {
-		    distance = min(distance, dst);
-		    return vec4(vec3(distance), 1.0);
+		if (caster > THRESHOLD && collided == false) {
+		    distance = dst;
+		    collided = true;
 		    //NOTE: we could probably use "break" or "return" here
+		} else if (caster < THRESHOLD && collided == true) {
+			distanceDS = dst;
+			break;
 		}
 	}
-	return vec4(vec3(distance), 1.0);
+	return vec4(vec3(distance,distanceDS,0.0), 1.0);
 }
