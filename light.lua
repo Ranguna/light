@@ -6,10 +6,9 @@ light.shader.UDShadow = love.graphics.newShader('1DShadow.glsl')
 light.shader.shadow = love.graphics.newShader('shadow.glsl')
 light.shader.light = love.graphics.newShader('light.glsl')
 light.shader.merge = love.graphics.newShader('merge.glsl')
-light.shader.lCircle = love.graphics.newShader('lCircle.glsl')
-light.shader.draw = love.graphics.newShader('draw.glsl')
 
-function light.load(w,h)
+function light.load(w,h,background)
+	light.background = background or {0,0,0,1}
 	light.light = {}
 	light.canvas.FBO = {}
 	light.canvas.UDS = {}
@@ -28,7 +27,7 @@ function light.generateScene(scene)
 		love.graphics.clear()
 		love.graphics.setShader(light.shader.merge)
 		light.shader.merge:send('u_texture',lscene)
-		light.shader.merge:send('background',{0,0,0,0})
+		light.shader.merge:send('background',light.background)
 		--light.shader.merge:send('uAlpha',true)
 
 		love.graphics.draw(scene)
@@ -38,6 +37,7 @@ function light.generateScene(scene)
 end
 
 function light.generateLight(scene)
+	--generates raw light on the sceen
 	love.graphics.setCanvas(light.lightScene)
 		love.graphics.clear()
 	love.graphics.setCanvas()
