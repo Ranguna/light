@@ -21,94 +21,28 @@ function light.load(w,h)
 	light.m = math.max(light.w,light.h)
 end
 
-function light.generateLightCircle()
-	love.graphics.setCanvas(light.lightCScene[1],light.lightCScene[2])
-		love.graphics.clear()
-		love.graphics.setColor(0, 0, 0, 255)
-		love.graphics.rectangle('fill', 0, 0, light.w, light.h)
-	love.graphics.setCanvas()
-
-	local use = true
-	for i,v in ipairs(light.light) do
-
-		--generate circle
-		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][2])
-			love.graphics.clear()
-			love.graphics.setShader(light.shader.lCircle)
-			love.graphics.setColor(v.color)
-			love.graphics.draw(light.canvas.FBO[v.rad*2][1])
-			love.graphics.setShader()
-		love.graphics.setCanvas()
-
-		--inverts circle in the y axis
-		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][1])
-			love.graphics.clear()
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(light.canvas.FBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.FBO[v.rad*2][2]:getHeight())
-		love.graphics.setCanvas()
-
-
-
-		--blend circle into scene
-		love.graphics.setCanvas(light.lightCScene[3])
-			love.graphics.clear(0,0,0,0)
-			love.graphics.setColor(255, 255, 255, 255)
-			--love.graphics.setBlendMode('lighten','premultiplied')
-			love.graphics.setBlendMode('replace')
-			love.graphics.draw(light.canvas.FBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
-		love.graphics.setCanvas()
-		love.graphics.setBlendMode('alpha','alphamultiply')
-
-		love.graphics.setCanvas(light.lightCScene[use and 1 or 2])
-		love.graphics.clear()
-			love.graphics.setColor(255, 255, 255, 255)
-			love.graphics.setShader(light.shader.draw)
-			light.shader.draw:send('u_texture',light.lightCScene[3])
-			love.graphics.draw(light.lightCScene[use and 2 or 1])
-			love.graphics.setShader()
-		love.graphics.setCanvas()
-		use = not use
-		--love.graphics.setBlendMode('alpha')
-	end
-	
-	love.graphics.setColor(255, 255, 255, 255)
-	
-	--return light.lightCScene[3]
-	--return light.canvas.FBO[light.light[1].rad*2][1]
-	return light.lightCScene[use and 1 or 2]
-end
-
 function light.generateScene(scene)
 	local lscene = light.generateLight(scene)
+	--lscene:newImageData():encode('png','lscene.png')
 	love.graphics.setCanvas(light.mergeScene[1])
 		love.graphics.clear()
 		love.graphics.setShader(light.shader.merge)
 		light.shader.merge:send('u_texture',lscene)
-		light.shader.merge:send('uAlpha',false)
+		light.shader.merge:send('background',{0,0,0,0})
+		--light.shader.merge:send('uAlpha',true)
 
 		love.graphics.draw(scene)
 		love.graphics.setShader()
 	love.graphics.setCanvas()
-	local lcscene = light.generateLightCircle()
-	love.graphics.setCanvas(light.mergeScene[2])
-		love.graphics.clear()
-		love.graphics.setShader(light.shader.merge)
-		light.shader.merge:send('u_texture',lcscene)
-		light.shader.merge:send('uAlpha',true)
-
-		love.graphics.draw(light.mergeScene[1])
-		love.graphics.setShader()
-	love.graphics.setCanvas()
-	return light.mergeScene[2]
+	return light.mergeScene[1]
 end
 
 function light.generateLight(scene)
 	love.graphics.setCanvas(light.lightScene)
 		love.graphics.clear()
-		love.graphics.setColor(0, 0, 0, 255)
-		love.graphics.rectangle('fill', 0, 0, light.w, light.h)
 	love.graphics.setCanvas()
 
+	--love.graphics.setBlendMode('replace','premultiplied')
 	for i,v in ipairs(light.light) do
 		love.graphics.setCanvas(light.canvas.FBO[v.rad *2][1])
 			love.graphics.clear()
@@ -147,7 +81,7 @@ function light.generateLight(scene)
 		--blend shadow into scene
 		love.graphics.setCanvas(light.lightScene)
 			love.graphics.setColor(255, 255, 255, 255)
-			love.graphics.setBlendMode('add')
+			love.graphics.setBlendMode('alpha','alphamultiply')
 			love.graphics.draw(light.canvas.FBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
 		love.graphics.setCanvas()
 		love.graphics.setBlendMode('alpha')

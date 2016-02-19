@@ -123,13 +123,14 @@ function love.draw()
 
 
 	love.graphics.setColor(255, 255, 255, 255)
-	love.graphics.origin()
-	--love.graphics.draw(light.generateShadows(scene)) --shadow scene
+	love.graphics.reset()
+	love.graphics.draw(light.generateShadows(scene)) --shadow scene
+	--light.generateShadows(scene):newImageData():encode('png','shadows.png')
 	love.graphics.draw(light.canvas.UDS[light.light[1].rad][1]) --1D lookup
 	--love.graphics.draw(light.canvas.FBO[light.light[1].rad*2][1]) --shadow
 	--love.graphics.draw(scene)
-	love.graphics.draw(light.generateLight(scene)) --light scene
-	--love.graphics.draw(light.generateScene(scene)) --scene scene
+	--love.graphics.draw(light.generateLight(scene)) --light scene
+	love.graphics.draw(light.generateScene(scene)) --scene scene
 	--love.graphics.draw(light.generateLightCircle()) --scene scene
 
 	love.graphics.print('#: '.. #light.getLight())
@@ -146,7 +147,7 @@ function love.keypressed(k)
 		light[1][3] = light[1][3] -10 >= 10 and light[1][3] -10 or 10
 		light.canvas.FBO[light[1][3]*2] = {using = 1,love.graphics.newCanvas(light[1][3]*2,light[1][3]*2),love.graphics.newCanvas(light[1][3]*2,light[1][3]*2)}
 		light.canvas.UDS[light[1][3] ] = {using = 1,love.graphics.newCanvas(light[1][3],1),love.graphics.newCanvas(light[1][3],1)}]]
-		light.changeLight(1,{rad=light.getLight(1)[3]-10})
+		light.changeLight(1,{rad=light.getLight(1).rad-10})
 	elseif k == 'up' then
 		--[[if light.canvas.FBO[light[1][3]*2].using -1 == 0 then
 			light.canvas.FBO[light[1][3]*2] = nil
@@ -157,7 +158,7 @@ function love.keypressed(k)
 	    light[1][3] = light[1][3] +10
 	    light.canvas.FBO[light[1][3]*2] = {using = 1,love.graphics.newCanvas(light[1][3]*2,light[1][3]*2),love.graphics.newCanvas(light[1][3]*2,light[1][3]*2)}
 		light.canvas.UDS[light[1][3] ] = {using = 1,love.graphics.newCanvas(light[1][3],1),love.graphics.newCanvas(light[1][3],1)}]]
-		light.changeLight(1,{rad=light.getLight(1)[3]+10})
+		light.changeLight(1,{rad=light.getLight(1).rad+10})
 	elseif k == 'escape' then
 		window = {0,0}
 	end

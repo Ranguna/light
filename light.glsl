@@ -12,7 +12,7 @@ vec4 effect( vec4 vColor, Image texture, vec2 vTexCoord0, vec2 screen_coords ) {
     number coord = (theta + PI) / (2.0*PI);
 
     if (r > Texel(u_texture, vec2(coord,0.)).r && r < Texel(u_texture, vec2(coord,0.)).g) {
-    	return vec4(vColor.rgb,1.);
+    	return vec4(vColor.rgb,smoothstep(1.0, 0.0, r));
     }
     return vec4(vColor.rgb,0.);
 }
