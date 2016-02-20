@@ -170,6 +170,19 @@ function light.changeLight(t,args)
 				break
 			end
 		end
+		if i == t then
+			error('Light was not found.')
+		end
+	elseif type(t) == 'string' then
+		for _,v in ipairs(light.light) do
+			if v.name == t then
+				i = _
+				break
+			end
+		end
+		if i == t then
+			error('Light "'.. t ..'" was not found.')
+		end
 	end
 	--if args.rad then print('changing',args.x,args.y,args.rad,args.color) end
 	if args.rad then
@@ -193,6 +206,7 @@ function light.changeLight(t,args)
 	args.y = args.y or light.light[i].y
 	args.rad = args.rad or light.light[i].rad
 	args.color = args.color or light.light[i].color
+	args.name = args.name or light.light[i].name
 	--if args.rad then print('changing2',args.x,args.y,args.rad,args.color) end
 	light.light[i] = args
 end
@@ -201,7 +215,7 @@ function light.addLight(...)
 	for i,v in ipairs({...}) do
 		v.color = #v.color == 3 and {v.color[1],v.color[2],v.color[3],255} or v.color
 		table.insert(light.light,v)
-		print('adding',v.x,v.y,v.rad,v.color[1],v.color[2],v.color[3],v.color[4])
+		print('adding',v.x,v.y,v.rad,v.name,v.color[1],v.color[2],v.color[3],v.color[4])
 		if light.canvas.FBO[v.rad*2] then
 			light.canvas.FBO[v.rad*2].using = light.canvas.FBO[v.rad*2].using +1
 			light.canvas.UDS[v.rad].using = light.canvas.UDS[v.rad].using +1
@@ -221,6 +235,19 @@ function light.removeLight(t)
 				i = _
 				break
 			end
+		end
+		if i == t then
+			error('Light was not found.')
+		end
+	elseif type(t) == 'string' then
+		for _,v in ipairs(light.light) do
+			if v.name == t then
+				i = _
+				break
+			end
+		end
+		if i == t then
+			error('Light "'.. t ..'" was not found.')
 		end
 	end
 	if light.canvas.FBO[light.light[i].rad *2].using -1 > 0 then
