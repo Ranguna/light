@@ -1,14 +1,15 @@
+a = (...):sub(1,-7) ..'/'
 local light = {}
 
 light.canvas = {}
 light.shader = {}
-light.shader.UDShadow = love.graphics.newShader('1DShadow.glsl')
-light.shader.shadow = love.graphics.newShader('shadow.glsl')
-light.shader.light = love.graphics.newShader('light.glsl')
-light.shader.merge = love.graphics.newShader('merge.glsl')
+light.shader.UDShadow = love.graphics.newShader(a .. '1DShadow.glsl')
+light.shader.shadow = love.graphics.newShader(a .. 'shadow.glsl')
+light.shader.light = love.graphics.newShader(a .. 'light.glsl')
+light.shader.merge = love.graphics.newShader(a .. 'merge.glsl')
 
 function light.load(w,h,background)
-	light.background = background or {.1,0.2,.5,.4}
+	light.background = background or {.0,0.0,.0,1}
 	light.light = {}
 	light.canvas.FBO = {}
 	light.canvas.UDS = {}
