@@ -8,7 +8,7 @@ light.shader.light = love.graphics.newShader('light.glsl')
 light.shader.merge = love.graphics.newShader('merge.glsl')
 
 function light.load(w,h,background)
-	light.background = background or {0,0,0,1}
+	light.background = background or {.1,0.2,.5,.4}
 	light.light = {}
 	light.canvas.FBO = {}
 	light.canvas.UDS = {}
@@ -22,7 +22,6 @@ end
 
 function light.generateScene(scene)
 	local lscene = light.generateLight(scene)
-	--lscene:newImageData():encode('png','lscene.png')
 	love.graphics.setCanvas(light.mergeScene[1])
 		love.graphics.clear()
 		love.graphics.setShader(light.shader.merge)
@@ -32,8 +31,14 @@ function light.generateScene(scene)
 
 		love.graphics.draw(scene)
 		love.graphics.setShader()
+	love.graphics.setCanvas(light.mergeScene[2])
+		love.graphics.clear()
+		love.graphics.setColor(light.background)
+		love.graphics.draw(scene)
+		love.graphics.setColor(255, 255, 255, 255)
+		love.graphics.draw(light.mergeScene[1])
 	love.graphics.setCanvas()
-	return light.mergeScene[1]
+	return light.mergeScene[2]
 end
 
 function light.generateLight(scene)
@@ -94,11 +99,12 @@ end
 function light.generateShadows(scene)
 	love.graphics.setCanvas(light.shadowScene)
 		love.graphics.clear()
-		love.graphics.setColor(0, 0, 0, 255)
+		love.graphics.setColor(light.background[1]*255,light.background[2]*255,light.background[3]*255,light.background[4]*255)
 		love.graphics.rectangle('fill', 0, 0, light.w, light.h)
 	love.graphics.setCanvas()
 
 	for i,v in ipairs(light.light) do
+		love.graphics.setColor(255, 255, 255, 255)
 		love.graphics.setCanvas(light.canvas.FBO[v.rad *2][1])
 			love.graphics.clear()
 			love.graphics.draw(scene,-(v.x-v.rad),-(v.y-v.rad))
@@ -155,7 +161,16 @@ function light.getLight(i)
 	end
 end
 
-function light.changeLight(i,args)
+function light.changeLight(t,args)
+	local i = t
+	if type(t) == 'table' then
+		for _,v in ipairs(light.light) do
+			if v == t then
+				i = _
+				break
+			end
+		end
+	end
 	--if args.rad then print('changing',args.x,args.y,args.rad,args.color) end
 	if args.rad then
 		args.rad = args.rad > 50 and args.rad or 50
@@ -184,8 +199,9 @@ end
 
 function light.addLight(...)
 	for i,v in ipairs({...}) do
+		v.color = #v.color == 3 and {v.color[1],v.color[2],v.color[3],255} or v.color
 		table.insert(light.light,v)
-		print('adding',v.x,v.y,v.rad,v.color)
+		print('adding',v.x,v.y,v.rad,v.color[1],v.color[2],v.color[3],v.color[4])
 		if light.canvas.FBO[v.rad*2] then
 			light.canvas.FBO[v.rad*2].using = light.canvas.FBO[v.rad*2].using +1
 			light.canvas.UDS[v.rad].using = light.canvas.UDS[v.rad].using +1
@@ -193,11 +209,20 @@ function light.addLight(...)
 			light.canvas.FBO[v.rad*2] = {using = 1,love.graphics.newCanvas(v.rad*2,v.rad*2),love.graphics.newCanvas(v.rad*2,v.rad*2)}
 			light.canvas.UDS[v.rad] = {using = 1,love.graphics.newCanvas(v.rad,1),love.graphics.newCanvas(v.rad,1)}
 		end
-		return #light.light
+		return light.light[#light.light]
 	end
 end
 
-function light.removeLight(i)
+function light.removeLight(t)
+	local i = t
+	if type(t) == 'table' then
+		for _,v in ipairs(light.light) do
+			if v == t then
+				i = _
+				break
+			end
+		end
+	end
 	if light.canvas.FBO[light.light[i].rad *2].using -1 > 0 then
 		light.canvas.FBO[light.light[i].rad *2].using = light.canvas.FBO[light.light[i].rad *2].using -1
 		light.canvas.UDS[light.light[i].rad ].using = light.canvas.UDS[light.light[i].rad ].using -1

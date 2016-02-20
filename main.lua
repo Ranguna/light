@@ -131,6 +131,7 @@ function love.draw()
 	--love.graphics.draw(scene)
 	--love.graphics.draw(light.generateLight(scene)) --light scene
 	love.graphics.draw(light.generateScene(scene)) --scene scene
+	light.generateScene(scene):newImageData():encode('png','scene.png')
 	--love.graphics.draw(light.generateLightCircle()) --scene scene
 
 	love.graphics.print('#: '.. #light.getLight())
