@@ -21,7 +21,9 @@ function light.load(w,h,background)
 	light.m = math.max(light.w,light.h)
 end
 
-function light.generateScene(scene)
+function light.generateScene(scene,Scene)
+	--when you don't have enough inspiration to come up with variable names
+	Scene = Scene or scene
 	local lscene = light.generateLight(scene)
 	love.graphics.setCanvas(light.mergeScene[1])
 		love.graphics.clear()
@@ -30,12 +32,12 @@ function light.generateScene(scene)
 		light.shader.merge:send('background',light.background)
 		--light.shader.merge:send('uAlpha',true)
 
-		love.graphics.draw(scene)
+		love.graphics.draw(Scene)
 		love.graphics.setShader()
 	love.graphics.setCanvas(light.mergeScene[2])
 		love.graphics.clear()
 		love.graphics.setColor(light.background)
-		love.graphics.draw(scene)
+		love.graphics.draw(Scene)
 		love.graphics.setColor(255, 255, 255, 255)
 		love.graphics.draw(light.mergeScene[1])
 	love.graphics.setCanvas()
