@@ -16,7 +16,6 @@ function light.load(w,h,background)
 	light.shadowScene = love.graphics.newCanvas(w,h)
 	light.lightScene = love.graphics.newCanvas(w,h)
 	light.mergeScene = {love.graphics.newCanvas(w,h),love.graphics.newCanvas(w,h)}
-	light.lightCScene = {love.graphics.newCanvas(w,h),love.graphics.newCanvas(w,h),love.graphics.newCanvas(w,h)}
 	light.w,light.h = w,h
 	light.m = math.max(light.w,light.h)
 end
