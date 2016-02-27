@@ -48,6 +48,5 @@ vec4 effect( vec4 vColor, Image texture, vec2 vTexCoord0, vec2 screen_coords ) {
 
     //multiply the summed amount by our distance, which gives us a radial falloff
     //then multiply by vertex (light) color  
-    return vec4(vec3(center),1.);
-    //return vColor * vec4(vec3(1.0), center * smoothstep(1.0, 0.0, r));
+    return vColor * vec4(vec3(1.0), center * smoothstep(1.0, 0.0, r));
 }

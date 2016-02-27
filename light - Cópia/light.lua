@@ -11,81 +11,38 @@ light.shader.merge = love.graphics.newShader(a .. 'merge.glsl')
 function light.load(w,h,background)
 	light.background = background or {.0,0.0,.0,1}
 	light.light = {}
-	light.canvas.SFBO = {}
-	light.canvas.LFBO = {}
+	light.canvas.FBO = {}
 	light.canvas.UDS = {}
 	light.shadowScene = love.graphics.newCanvas(w,h)
 	light.lightScene = love.graphics.newCanvas(w,h)
-	light.litScene = love.graphics.newCanvas(w,h)
 	light.mergeScene = {love.graphics.newCanvas(w,h),love.graphics.newCanvas(w,h)}
 	light.w,light.h = w,h
 	light.m = math.max(light.w,light.h)
 end
 
 function light.generateScene(Sscene,Lscene)
-	love.graphics.setCanvas(light.litScene)
+	Lcene = Lcene or Sscene
+	local lscene = light.generateLight(Lscene)
+	love.graphics.setCanvas(light.mergeScene[1])
 		love.graphics.clear()
-		love.graphics.setColor(light.background[1]*255,light.background[2]*255,light.background[3]*255,light.background[4]*255)
-		love.graphics.rectangle('fill', 0, 0, light.w, light.h)
-	love.graphics.setCanvas()
+		love.graphics.setShader(light.shader.merge)
+		light.shader.merge:send('u_texture',lscene)
+		light.shader.merge:send('background',light.background)
+		--light.shader.merge:send('uAlpha',true)
 
-	for i,v in ipairs(light.light) do
+		love.graphics.draw(Lscene)
+		love.graphics.setShader()
+	love.graphics.setCanvas(light.mergeScene[2])
+		love.graphics.clear()
+		love.graphics.setColor(light.background)
+		love.graphics.draw(Lscene)
 		love.graphics.setColor(255, 255, 255, 255)
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad *2][1])
-			love.graphics.clear()
-			love.graphics.draw(Sscene,-(v.x-v.rad),-(v.y-v.rad))
-		love.graphics.setCanvas()
-		love.graphics.setCanvas(light.canvas.LFBO[v.rad *2][1])
-			love.graphics.clear()
-			love.graphics.draw(Lscene,-(v.x-v.rad),-(v.y-v.rad))
-		love.graphics.setCanvas()
-
-		--generate 1D shadow map lookup
-		love.graphics.setCanvas(light.canvas.UDS[v.rad ][1])
-			love.graphics.clear()
-			love.graphics.setShader(light.shader.UDShadow)
-			light.shader.UDShadow:send('u_texture',light.canvas.SFBO[v.rad*2][1])
-			light.shader.UDShadow:send('v_texture',light.canvas.LFBO[v.rad*2][1])
-			light.shader.UDShadow:send('resolution',{v.rad,v.rad})
-			love.graphics.draw(light.canvas.UDS[v.rad ][2])
-			love.graphics.setShader()
-		love.graphics.setCanvas()
-
-		--generate shadow
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][2])
-			love.graphics.clear()
-			love.graphics.setShader(light.shader.light)
-			love.graphics.setColor(v.color)
-			--light.shader.shadow:send('resolution',{v.rad,v.rad})
-			light.shader.light:send('u_texture',light.canvas.UDS[v.rad ][1])
-			love.graphics.draw(light.canvas.LFBO[v.rad*2][1])
-			love.graphics.setShader()
-		love.graphics.setCanvas()
-
-		--inverts shadow canvas in the y axis
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][1])
-			love.graphics.clear()
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.SFBO[v.rad*2][2]:getHeight())
-		love.graphics.setCanvas()
-
-
-		--blend shadow into scene
-		love.graphics.setCanvas(light.litScene)
-			love.graphics.setColor(255, 255, 255, 255)
-			love.graphics.setBlendMode('add')
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
-		love.graphics.setCanvas()
-		love.graphics.setBlendMode('alpha')
-	end
-	
-	love.graphics.setColor(255, 255, 255, 255)
-	
-	return light.litScene
-	--return light.canvas.SFBO[light.light[1].rad*2][1]
+		love.graphics.draw(light.mergeScene[1])
+	love.graphics.setCanvas()
+	return light.mergeScene[2]
 end
 
-function light.generateLight(scene,v_scene)
+function light.generateLight(scene)
 	--generates raw light on the sceen
 	love.graphics.setCanvas(light.lightScene)
 		love.graphics.clear()
@@ -93,42 +50,37 @@ function light.generateLight(scene,v_scene)
 
 	--love.graphics.setBlendMode('replace','premultiplied')
 	for i,v in ipairs(light.light) do
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad *2][1])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad *2][1])
 			love.graphics.clear()
 			love.graphics.draw(scene,-(v.x-v.rad),-(v.y-v.rad))
 		love.graphics.setCanvas()
-		light.shader.UDShadow:send('u_texture',light.canvas.SFBO[v.rad*2][1])
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad *2][1])
-			love.graphics.clear()
-			love.graphics.draw(v_scene,-(v.x-v.rad),-(v.y-v.rad))
-		love.graphics.setCanvas()
-		light.shader.UDShadow:send('v_texture',light.canvas.SFBO[v.rad*2][1])
 
 		--generate 1D light map lookup
 		love.graphics.setCanvas(light.canvas.UDS[v.rad ][1])
 			love.graphics.clear()
 			love.graphics.setShader(light.shader.UDShadow)
 			light.shader.UDShadow:send('resolution',{v.rad,v.rad})
+			light.shader.UDShadow:send('u_texture',light.canvas.FBO[v.rad*2][1])
 			love.graphics.draw(light.canvas.UDS[v.rad ][2])
 			love.graphics.setShader()
 		love.graphics.setCanvas()
 
 		--generate light
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][2])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][2])
 			love.graphics.clear()
 			love.graphics.setShader(light.shader.light)
 			love.graphics.setColor(v.color)
 			--light.shader.shadow:send('resolution',{v.rad,v.rad})
 			light.shader.light:send('u_texture',light.canvas.UDS[v.rad ][1])
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][1])
+			love.graphics.draw(light.canvas.FBO[v.rad*2][1])
 			love.graphics.setShader()
 		love.graphics.setCanvas()
 
 		--inverts light canvas in the y axis
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][1])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][1])
 			love.graphics.clear()
 			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.SFBO[v.rad*2][2]:getHeight())
+			love.graphics.draw(light.canvas.FBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.FBO[v.rad*2][2]:getHeight())
 		love.graphics.setCanvas()
 
 
@@ -136,7 +88,7 @@ function light.generateLight(scene,v_scene)
 		love.graphics.setCanvas(light.lightScene)
 			love.graphics.setColor(255, 255, 255, 255)
 			love.graphics.setBlendMode('alpha','alphamultiply')
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
+			love.graphics.draw(light.canvas.FBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
 		love.graphics.setCanvas()
 		love.graphics.setBlendMode('alpha')
 	end
@@ -145,7 +97,7 @@ function light.generateLight(scene,v_scene)
 	return light.lightScene
 end
 
-function light.generateShadows(Sscene,Lscene)
+function light.generateShadows(scene)
 	love.graphics.setCanvas(light.shadowScene)
 		love.graphics.clear()
 		love.graphics.setColor(light.background[1]*255,light.background[2]*255,light.background[3]*255,light.background[4]*255)
@@ -154,42 +106,37 @@ function light.generateShadows(Sscene,Lscene)
 
 	for i,v in ipairs(light.light) do
 		love.graphics.setColor(255, 255, 255, 255)
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad *2][1])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad *2][1])
 			love.graphics.clear()
-			love.graphics.draw(Sscene,-(v.x-v.rad),-(v.y-v.rad))
-		love.graphics.setCanvas()
-		love.graphics.setCanvas(light.canvas.LFBO[v.rad *2][1])
-			love.graphics.clear()
-			love.graphics.draw(Lscene,-(v.x-v.rad),-(v.y-v.rad))
+			love.graphics.draw(scene,-(v.x-v.rad),-(v.y-v.rad))
 		love.graphics.setCanvas()
 
 		--generate 1D shadow map lookup
 		love.graphics.setCanvas(light.canvas.UDS[v.rad ][1])
 			love.graphics.clear()
 			love.graphics.setShader(light.shader.UDShadow)
-			light.shader.UDShadow:send('u_texture',light.canvas.SFBO[v.rad*2][1])
-			light.shader.UDShadow:send('v_texture',light.canvas.LFBO[v.rad*2][1])
 			light.shader.UDShadow:send('resolution',{v.rad,v.rad})
+			light.shader.UDShadow:send('u_texture',light.canvas.FBO[v.rad*2][1])
 			love.graphics.draw(light.canvas.UDS[v.rad ][2])
 			love.graphics.setShader()
 		love.graphics.setCanvas()
 
 		--generate shadow
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][2])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][2])
 			love.graphics.clear()
 			love.graphics.setShader(light.shader.shadow)
 			love.graphics.setColor(v.color)
 			--light.shader.shadow:send('resolution',{v.rad,v.rad})
 			light.shader.shadow:send('u_texture',light.canvas.UDS[v.rad ][1])
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][1])
+			love.graphics.draw(light.canvas.FBO[v.rad*2][1])
 			love.graphics.setShader()
 		love.graphics.setCanvas()
 
 		--inverts shadow canvas in the y axis
-		love.graphics.setCanvas(light.canvas.SFBO[v.rad*2][1])
+		love.graphics.setCanvas(light.canvas.FBO[v.rad*2][1])
 			love.graphics.clear()
 			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.SFBO[v.rad*2][2]:getHeight())
+			love.graphics.draw(light.canvas.FBO[v.rad*2][2], 0, 0, 0, 1, -1, 0, light.canvas.FBO[v.rad*2][2]:getHeight())
 		love.graphics.setCanvas()
 
 
@@ -197,7 +144,7 @@ function light.generateShadows(Sscene,Lscene)
 		love.graphics.setCanvas(light.shadowScene)
 			love.graphics.setColor(255, 255, 255, 255)
 			love.graphics.setBlendMode('add')
-			love.graphics.draw(light.canvas.SFBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
+			love.graphics.draw(light.canvas.FBO[v.rad*2][1], (v.x-v.rad),(v.y-v.rad))
 		love.graphics.setCanvas()
 		love.graphics.setBlendMode('alpha')
 	end
@@ -241,22 +188,18 @@ function light.changeLight(t,args)
 	--if args.rad then print('changing',args.x,args.y,args.rad,args.color) end
 	if args.rad then
 		args.rad = args.rad > 50 and args.rad or 50
-		if light.canvas.SFBO[light.light[i].rad *2].using -1 > 0 then
-			light.canvas.SFBO[light.light[i].rad *2].using = light.canvas.SFBO[light.light[i].rad *2].using -1
-			light.canvas.LFBO[light.light[i].rad *2].using = light.canvas..LFBO[light.light[i].rad *2].using -1
+		if light.canvas.FBO[light.light[i].rad *2].using -1 > 0 then
+			light.canvas.FBO[light.light[i].rad *2].using = light.canvas.FBO[light.light[i].rad *2].using -1
 			light.canvas.UDS[light.light[i].rad ].using = light.canvas.UDS[light.light[i].rad ].using -1
 		else
-			light.canvas.SFBO[light.light[i].rad *2] = nil
-			light.canvas.LFBO[light.light[i].rad *2] = nil
+			light.canvas.FBO[light.light[i].rad *2] = nil
 			light.canvas.UDS[light.light[i].rad ] = nil
 		end
-		if light.canvas.SFBO[args.rad*2] then
-			light.canvas.SFBO[args.rad*2].using = light.canvas.SFBO[args.rad*2].using +1
-			light.canvas.LFBO[args.rad*2].using = light.canvas.SLFBO[args.rad*2].using +1
+		if light.canvas.FBO[args.rad*2] then
+			light.canvas.FBO[args.rad*2].using = light.canvas.FBO[args.rad*2].using +1
 			light.canvas.UDS[args.rad].using = light.canvas.UDS[args.rad].using +1
 		else
-			light.canvas.SFBO[args.rad*2] = {using = 1,love.graphics.newCanvas(args.rad*2,args.rad*2),love.graphics.newCanvas(args.rad*2,args.rad*2)}
-			light.canvas.LFBO[args.rad*2] = {using = 1,love.graphics.newCanvas(args.rad*2,args.rad*2),love.graphics.newCanvas(args.rad*2,args.rad*2)}
+			light.canvas.FBO[args.rad*2] = {using = 1,love.graphics.newCanvas(args.rad*2,args.rad*2),love.graphics.newCanvas(args.rad*2,args.rad*2)}
 			light.canvas.UDS[args.rad] = {using = 1,love.graphics.newCanvas(args.rad,1),love.graphics.newCanvas(args.rad,1)}
 		end
 	end
@@ -274,13 +217,11 @@ function light.addLight(...)
 		v.color = #v.color == 3 and {v.color[1],v.color[2],v.color[3],255} or v.color
 		table.insert(light.light,v)
 		print('adding',v.x,v.y,v.rad,v.name,v.color[1],v.color[2],v.color[3],v.color[4])
-		if light.canvas.SFBO[v.rad*2] then
-			light.canvas.SFBO[v.rad*2].using = light.canvas.SFBO[v.rad*2].using +1
-			light.canvas.LFBO[v.rad*2].using = light.canvas.LFBO[v.rad*2].using +1
+		if light.canvas.FBO[v.rad*2] then
+			light.canvas.FBO[v.rad*2].using = light.canvas.FBO[v.rad*2].using +1
 			light.canvas.UDS[v.rad].using = light.canvas.UDS[v.rad].using +1
 		else
-			light.canvas.SFBO[v.rad*2] = {using = 1,love.graphics.newCanvas(v.rad*2,v.rad*2),love.graphics.newCanvas(v.rad*2,v.rad*2)}
-			light.canvas.LFBO[v.rad*2] = {using = 1,love.graphics.newCanvas(v.rad*2,v.rad*2),love.graphics.newCanvas(v.rad*2,v.rad*2)}
+			light.canvas.FBO[v.rad*2] = {using = 1,love.graphics.newCanvas(v.rad*2,v.rad*2),love.graphics.newCanvas(v.rad*2,v.rad*2)}
 			light.canvas.UDS[v.rad] = {using = 1,love.graphics.newCanvas(v.rad,1),love.graphics.newCanvas(v.rad,1)}
 		end
 		return light.light[#light.light]
@@ -310,13 +251,11 @@ function light.removeLight(t)
 			error('Light "'.. t ..'" was not found.')
 		end
 	end
-	if light.canvas.SFBO[light.light[i].rad *2].using -1 > 0 then
-		light.canvas.SFBO[light.light[i].rad *2].using = light.canvas.SFBO[light.light[i].rad *2].using -1
-		light.canvas.LFBO[light.light[i].rad *2].using = light.canvas.LFBO[light.light[i].rad *2].using -1
+	if light.canvas.FBO[light.light[i].rad *2].using -1 > 0 then
+		light.canvas.FBO[light.light[i].rad *2].using = light.canvas.FBO[light.light[i].rad *2].using -1
 		light.canvas.UDS[light.light[i].rad ].using = light.canvas.UDS[light.light[i].rad ].using -1
 	else
-		light.canvas.SFBO[light.light[i].rad *2] = nil
-		light.canvas.LFBO[light.light[i].rad *2] = nil
+		light.canvas.FBO[light.light[i].rad *2] = nil
 		light.canvas.UDS[light.light[i].rad ] = nil
 	end
 	table.remove(ligth.light, i)
